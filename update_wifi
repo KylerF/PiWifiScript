@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# Used to configure wifi and set up SSH on an SD card with
+# Raspbian freshly installed, or to update the current wifi
+# configuration.
+#
+# Usage: ./update_wifi -s 'ssid' -p 'password'
+#
+
+sd_dir="/Volumes/boot"
+wifi_file="$sd_dir/wpa_supplicant.conf"
+ssh_file="$sd_dir/ssh"
+
+while getopts s:p: option
+do
+    case "${option}"
+    in
+        s) SSID=${OPTARG};;
+        p) PASS=${OPTARG};;
+    esac
+done
+
+if [ -z "$SSID" ] || [ -z "$PASS" ]
+then
+    echo "Usage: ./update_wifi -s 'ssid' -p 'password'"
+    exit 1
+fi
+
+if [ ! -d "$sd_dir" ]
+then
+    echo "No boot card mounted!"
+    exit 1
+fi
+
+echo "country=US" > $wifi_file
+echo "ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev" >> $wifi_file 
+echo "update_config=1" >> $wifi_file 
+echo "network={" >> $wifi_file 
+echo "    ssid=\"$SSID\"" >> $wifi_file 
+echo "    scan_ssid=1" >> $wifi_file 
+echo "    psk=\"$PASS\"" >> $wifi_file 
+echo "    key_mgmt=WPA-PSK" >> $wifi_file 
+echo "}" >> $wifi_file
+
+touch $ssh_file 
